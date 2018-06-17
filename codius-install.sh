@@ -1,9 +1,10 @@
 #!/bin/bash
 # File              : codius-install.sh
 # Author            : N3TC4T <netcat.av@gmail.com>
+#Forked Author      : TheRippening <contact@games.com>
 # Date              : 16.06.2018
 # Last Modified Date: 16.06.2018
-# Last Modified By  : N3TC4T <netcat.av@gmail.com>
+# Last Modified By  : TheRippening <contact@zerpgames.com>
 # Copyright (c) 2018 N3TC4T <netcat.av@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,35 +26,24 @@
 # SOFTWARE.
 
 
-
+#################################################################################################################
+# TheRippening (Myself) has removed the colorEcho function and adjusted the script to include some dependancies, 
+# typos for SSL certificate integration into nginx and certbot certificate creation.
+##############################################################################################################3##
+echo '##############################################################################'
+echo 'THIS HAS BEEN MODIFIED TO BE A SIMPLER VERSION OF THE GREAT WORK MADE BY N3TC4T <netcat.av@gmail.com>'
+echo ' CHANGES INCLUDE: '
+echo 'certbot --prefer-challenges > --preferred-challenges'
+echo 'ssl_session_cache sha:SSL:10m; > ssl_session_cache shared:SSL:10m; '
+echo ' colorEcho > removed '
+echo 'nginx dependancy > yum install php-fpm -y'
+echo 'Locally saves hyper-bootstrap.sh to disk then runs it locally'
+echo 'Prior to running hyper-bootstrap.sh it changes RED, YELLOW, etc colors with the new variable syntax () instead of comments'
+echo '##############################################################################'
 
 set -o nounset
 set -o errexit
 set -eu
-
-# Functions ==============================================
-
-function coloredEcho(){
-    local exp=$1;
-    local color=$2;
-    if ! [[ $color =~ '^[0-9]$' ]] ; then
-       case $(echo $color | tr '[:upper:]' '[:lower:]') in
-        black) color=0 ;;
-        red) color=1 ;;
-        green) color=2 ;;
-        yellow) color=3 ;;
-        blue) color=4 ;;
-        magenta) color=5 ;;
-        cyan) color=6 ;;
-        white|*) color=7 ;; # white or invalid color
-       esac
-    fi
-    tput setaf $color;
-    echo -e $exp;
-    tput sgr0;
-}
-
-# ============================================== Functions
 
 if [[ "$EUID" -ne 0 ]]; then
 	echo "Sorry, you need to run this as root"
@@ -63,7 +53,7 @@ fi
 
 if [[ -e /etc/debian_version ]]; then
 	OS=debian
-elif [[ -e /etc/centos-release || -e /etc/redhat-release ]]; then
+elif [[ -e /etc/centos-release || -e /etc/hat-release ]]; then
 	OS=centos
 elif [[ -e /etc/arch-release ]]; then
 	OS=arch
@@ -73,7 +63,7 @@ else
 fi
 
 if [[ $OS != centos ]]; then
-  coloredEcho "Sorry but for now just Centos supported!" red
+  echo "Sorry but for now just Centos supported!" 
   exit
 fi
 
@@ -94,14 +84,14 @@ read -p "IP address: " -e -i $IP IP
 if echo "$IP" | grep -qE '^(10\.|172\.1[6789]\.|172\.2[0-9]\.|172\.3[01]\.|192\.168)'; then
     echo
     echo "This server is behind NAT. What is the public IPv4 address?"
-    read -p "Public IP address: " -e PUBLICIP
+    read -p "Public IP address: " -e -i  PUBLICIP
 fi
 
 # Hostname
-echo "[+] What is your Codius hostname?"
-read -p "Hostname: " -e -i codius.example.com HOSTNAME
+echo "[+] What is your Codius hostname?" 
+read -p "Hostname: " -e -i codius1.zerpgames.com HOSTNAME
 if [[ -z "$HOSTNAME" ]]; then
-   printf '%s\n' "No Hostname entered , exiting ..."
+   printf '%s\n' "No Hostname ente , exiting ..."
    exit 1
 fi
 
@@ -111,44 +101,54 @@ hostnamectl set-hostname $HOSTNAME
 
 # Wallet secret for moneyd
 echo "[+] What is your XRP wallet secret (need for moneyd) ?"
-read -p "Wallet Secret: " -e SECRET
+read -p "Wallet Secret: " -e -i SECRET
 if [[ -z "$SECRET" ]]; then
-   printf '%s\n' "No Secret entered, exiting..."
+   printf '%s\n' "No Secret ente, exiting..."
    exit 1
 fi
 
 # Email for certbot
 echo "[+] What is your Email address ?"
-read -p "Email: " -e EMAIL
+read -p "Email: " -e -i admin@example.com EMAIL
 
 if [[ -z "$EMAIL" ]]; then
-    printf '%s\n' "No Email entered, exiting..."
+    printf '%s\n' "No Email ente, exiting..."
     exit 1
 fi
 
 
 # Hyperd ==============================================
 
-coloredEcho "\n[!] Installing required packages ...\n" green
+echo "\n[!] Installing requi packages ...\n" 
 sudo yum install -y gcc-c++ make epel-release git wget
-coloredEcho "\n[!] Installing Hyperd ...\n" green
-curl -sSl https://coiltest.s3.amazonaws.com/upload/latest/hyper-bootstrap.sh | bash
+echo "\n[!] Installing Hyperd ...\n" 
+curl -L https://coiltest.s3.amazonaws.com/upload/latest/hyper-bootstrap.sh > hyper-bootstrap.sh
+
+sed -i -e 's/RED=`tput setaf 1`/RED=(tput setaf 1)/g' hyper-bootstrap.sh 
+sed -i -e 's/GREEN=`tput setaf 2`/GREEN=(tput setaf 2)/g' hyper-bootstrap.sh 
+sed -i -e 's/YELLOW=`tput setaf 3`/YELLOW=(tput setaf 3)/g' hyper-bootstrap.sh 
+sed -i -e 's/BLUE=`tput setaf 4`/BLUE=(tput setaf 4)/g' hyper-bootstrap.sh 
+sed -i -e 's/WHITE=`tput setaf 7`/WHITE=(tput setaf 7)/g' hyper-bootstrap.sh 
+sed -i -e 's/LIGHT=`tput bold `/LIGHT=(tput bold)/g' hyper-bootstrap.sh 
+sed -i -e 's/RESET=`tput sgr0`/RESET=(tput sgr0)/g' hyper-bootstrap.sh 
+
+/bin/bash hyper-bootstrap.sh 
 
 # ============================================== Hyperd
 
 # Moneyd ==============================================
 
-coloredEcho "\n[!] Installing Nodejs ...\n" green
+echo "\n[!] Installing Nodejs ...\n" 
 curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo bash -
 sudo yum install -y nodejs
-coloredEcho "\n[!] Installing Moneyd ...\n" green
+echo "\n[!] Installing Moneyd ...\n" 
 sudo yum install -y https://s3.us-east-2.amazonaws.com/codius-bucket/moneyd-xrp-4.0.0-1.x86_64.rpm || true
 
 
 # Configuring moneyd and start service
 [ -f /root/.moneyd.json ] && mv /root/.moneyd.json /root/.moneyd.json.back
 
-coloredEcho "\n[!] Configure Moneyd ...\n" yellow
+echo "\n[!] Configure Moneyd ...\n" 
 echo -ne "$SECRET\n" | /usr/bin/moneyd xrp:configure
 
 
@@ -163,7 +163,7 @@ fi
 
 # Codius ==============================================
 
-coloredEcho "\n[!] Installing Codius ...\n" green
+echo "\n[!] Installing Codius ...\n" 
 sudo npm install -g codiusd --unsafe-perm
 
 
@@ -197,7 +197,7 @@ fi
 
 # Subdomain DNS ==============================================
 echo
-coloredEcho "\n[!] Please create two A records on your DNS and press enter to continue : \n" green
+echo "\n[!] Please create two A records on your DNS and press enter to continue : \n" 
 echo "$HOSTNAME.    300     IN      A       $IP
 *.$HOSTNAME.  300     IN      A       $IP"
 
@@ -205,9 +205,9 @@ read
 while true; do
     ping -c 1 $HOSTNAME >/dev/null 2>&1
     if [ $? -ne 0 ] ; then #if ping exits nonzero...
-	coloredEcho "[!] It's look like the host $HOSTNAME is not avalibale yet , waiting 30s ... " red
+	echo "[!] It's look like the host $HOSTNAME is not avalibale yet , waiting 30s ... " 
     else
-	coloredEcho "\n[!] Everything looks fine, continuing ... \n" green
+	echo "\n[!] Everything looks fine, continuing ... \n" 
 	break
 
     fi
@@ -217,9 +217,11 @@ done
 # ============================================== Subdomain DNS
 
 
+
+
 # CertBOt ==============================================
 
-coloredEcho "\n[+] Generating certificate for ${HOSTNAME}\n" green
+echo "\n[+] Generating certificate for ${HOSTNAME}\n" 
 # certbot stuff
 [ -d certbot ] && rm -rf certbot
 git clone https://github.com/certbot/certbot
@@ -229,13 +231,19 @@ git checkout v0.23.0
 ./tools/venv.sh > /dev/null
 sudo ln -sf `pwd`/venv/bin/certbot /usr/local/bin/certbot
 certbot certonly --manual -d "${HOSTNAME}" -d "*.${HOSTNAME}" --agree-tos --email "${EMAIL}" --preferred-challenges dns-01  --server https://acme-v02.api.letsencrypt.org/directory
+#certbot --nginx
 
 # ============================================== CertBOt
 
+# Install Nginx dependancy ===========================
+
+yum install php-fpm -y
+
+# ========================Install Nginx dependancy====
 
 # Nginx ==============================================
 
-coloredEcho "\n[!] Installing Nginx ...\n" green
+echo "\n[!] Installing Nginx ...\n" 
 # Nginx
 sudo yum install -y nginx
 
@@ -249,7 +257,7 @@ if [[ ! -e /etc/nginx/default.d ]]; then
 	mkdir /etc/nginx/default.d
 fi
 
-echo 'return 301 https://$host$request_uri;' | sudo tee /etc/nginx/default.d/ssl-redirect.conf
+echo 'return 301 https://$host$request_uri;' | sudo tee /etc/nginx/default.d/ssl-irect.conf
 sudo openssl dhparam -out /etc/nginx/dhparam.pem 2048
 
 
@@ -259,10 +267,8 @@ fi
 
 echo "server {
   listen 443 ssl;
-
   ssl_certificate /etc/letsencrypt/live/$HOSTNAME/fullchain.pem;
   ssl_certificate_key /etc/letsencrypt/live/$HOSTNAME/privkey.pem;
-
   ssl_protocols TLSv1.2;
   ssl_prefer_server_ciphers on;
   ssl_dhparam /etc/nginx/dhparam.pem;
@@ -279,7 +285,6 @@ echo "server {
   add_header X-Frame-Options DENY;
   add_header X-Content-Type-Options nosniff;
   add_header X-XSS-Protection '1; mode=block';
-
 location / {
     proxy_pass http://127.0.0.1:3000;
     proxy_set_header Host $$host;
@@ -297,7 +302,6 @@ fi
 # ============================================== Nginx
 
 
-coloredEcho "\n[!]Congratulations , it's look like Codius installed successfuly!" green
-coloredEcho "\n[-]You can check your Codius with opening $HOSTNAME/version or by visiting the peers list in https://codius.justmoon.com/peers " green
-coloredEcho "\n[-]Good luck :)" green
-
+echo "\n[!]Congratulations , it's look like Codius installed successfuly!" 
+echo "\n[-]You can check your Codius with opening $HOSTNAME/version or by visiting the peers list in https://codius.justmoon.com/peers " 
+echo "\n[-]Good luck :)" 
